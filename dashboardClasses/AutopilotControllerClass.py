@@ -139,9 +139,9 @@ class AutopilotController:
 
             self.newWindow = tk.Toplevel(self.frame)
             self.newWindow.title("Selection window")
-            self.newWindow.geometry("1000x500")
+            self.newWindow.geometry("1200x500")
             self.label = tk.Label(self.newWindow, text="Select the method to build the flight plan", width=50,  font=("Colibri", 25))
-            self.label.grid (column = 0, row = 0, columnspan = 4, pady = 30)
+            self.label.grid (column = 0, row = 0, columnspan = 5, pady = 30)
 
             canvas1 = tk.Canvas(self.newWindow, width=200, height=200)
             canvas1.grid(row=2, column=0,  padx= 40,sticky="W")
@@ -160,8 +160,6 @@ class AutopilotController:
                                      command=self.selectScan)
             scanButton.grid(row=3, column=1, padx=10, sticky="W")
 
-
-
             canvas3 = tk.Canvas(self.newWindow, width=200, height=200)
             canvas3.grid(row=2, column=2, sticky="W")
             self.photoSpiral = ImageTk.PhotoImage(Image.open("assets/spiral.png").resize((200, 200)))
@@ -178,9 +176,17 @@ class AutopilotController:
                                command=self.loadFlightPlan)
             load.grid(row = 3, column=3,padx=10, sticky="W")
 
+            canvas5 = tk.Canvas(self.newWindow, width=200, height=200)
+            canvas5.grid(row=2, column=4, sticky="W")
+            self.photoPreviousFlights = ImageTk.PhotoImage(Image.open("assets/previous.png").resize((200, 200)))
+            canvas5.create_image(0, 0, image=self.photoPreviousFlights, anchor="nw")
+            previous_flights = tk.Button(self.newWindow, text="Previous flights", bg='#8D4E85', fg="white", width=25,
+                                         command=self.showPreviousFlights)
+            previous_flights.grid(row=3, column=4, padx=10, sticky="W")
+
             close = tk.Button(self.newWindow, text="close", bg='#B7BBB6', fg="white", width=100,
                                command=self.close)
-            close.grid(row = 4, column=0, columnspan = 4, pady = 30)
+            close.grid(row = 4, column=0, columnspan = 5, pady = 30)
         else:
             messagebox.showwarning("Warning", "Debes conectarte antes")
 
@@ -201,6 +207,11 @@ class AutopilotController:
 
     def loadFlightPlan(self):
         self.flightPlanDesignerWindow = FlightPlanDesignerWindow(self.frame, 0, self.client, self.originPosition)
+        self.flightPlanDesignerWindow.openWindowToCreateFlightPlan()
+        self.newWindow.destroy()
+
+    def showPreviousFlights(self):
+        self.flightPlanDesignerWindow = FlightPlanDesignerWindow(self.frame, 4, self.client, self.originPosition)
         self.flightPlanDesignerWindow.openWindowToCreateFlightPlan()
         self.newWindow.destroy()
 
