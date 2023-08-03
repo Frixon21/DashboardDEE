@@ -6,3 +6,6 @@ paho-mqtt==1.6.1
 pre-commit==2.21.0
 requests==2.30.0
 python-vlc==3.0.18122
+pyppeteer==1.0.2
+ttkwidgets==0.13.0
+geographiclib==2.0
