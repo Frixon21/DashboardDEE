@@ -632,6 +632,11 @@ class FlightPlanDesignerWindow:
             self.wpWindow.insertHome(home['lat'], home['lon'])
             if (home['takePic']):
                 self.wpWindow.checkLastEntry()
+            if (self.mode == 0) and (home['startVid']):
+                self.canvas.itemconfig(self.waypointsIds[0]['ovalId'], fill='red')
+                vidStarted = True
+            if (self.mode == 0) and (home['staticVid']):
+                self.canvas.itemconfig(self.waypointsIds[0]['ovalId'], fill='green')
         elif (self.mode == 4) and (home['takePic']):
             self.canvas.itemconfig(self.waypointsIds[0]['ovalId'], fill='red')
 
@@ -672,18 +677,22 @@ class FlightPlanDesignerWindow:
                     self.wpWindow.checkLastEntry()
             wpNum = wpNum + 1
             prev = wp
-            if self.mode == 4:
+            if self.mode == 4 or self.mode == 0:
                 if wp['staticVid']:
                     self.canvas.itemconfig(self.waypointsIds[wpNum - 1]['ovalId'], fill='green')
-                elif wp['takePic']:
+                elif self.mode == 4 and wp['takePic']:
                     self.canvas.itemconfig(self.waypointsIds[wpNum - 1]['ovalId'], fill='red')
                 if vidStarted:
                     if wp['endVid']:
                         vidStarted = False
+                        if self.mode == 0:
+                            self.canvas.itemconfig(self.waypointsIds[wpNum - 1]['ovalId'], fill='red')
                     self.canvas.itemconfig(self.waypointsIds[wpNum - 1]['lineInId'], fill='green')
                 if wp['startVid']:
                     vidStarted = True
                     self.canvas.itemconfig(self.waypointsIds[wpNum - 1]['lineOutId'], fill='green')
+                    if self.mode == 0:
+                        self.canvas.itemconfig(self.waypointsIds[wpNum - 1]['ovalId'], fill='red')
 
 
         lineId = self.canvas.create_line(posx, posy, self.originx, self.originy, fill='blue')
@@ -697,12 +706,12 @@ class FlightPlanDesignerWindow:
         self.waypointsIds[-1]['distanceToId'] = distId
         self.waypointsIds[0]['lineInId'] = lineId
         self.waypointsIds[0]['distanceFrom'] = distId
-        if self.mode != 4:
+        if self.mode != 4 :
             self.wpWindow.insertRTL()
             self.wpWindow.focus_force()
 
         for wp in self.waypointsIds:
-            if self.mode != 4:
+            if self.mode != 4 and self.mode != 0:
                 self.canvas.itemconfig(wp['lineOutId'], fill="blue")
             self.canvas.itemconfig(wp['lineOutId'], width=3)
             self.canvas.tag_raise(wp['ovalId'])
@@ -732,12 +741,17 @@ class FlightPlanDesignerWindow:
             waypoint_data = json.loads(tree.item(item, 'text'))
             flight_waypoints = waypoint_data["FlightWaypoints"]
             pics_waypoints = waypoint_data["PicsWaypoints"]
+            vid_waypoints = waypoint_data["VidWaypoints"]
             pic_interval = waypoint_data["PicInterval"]
 
             cleaned_waypoints = []
             for fw in flight_waypoints:
                 take_pic = any(pw["lat"] == fw["lat"] and pw["lon"] == fw["lon"] for pw in pics_waypoints)
-                cleaned_waypoints.append({"lat": fw["lat"], "lon": fw["lon"], "takePic": take_pic})
+                start_vid = any(vw["mode"] == "moving" and vw["latStart"] == fw["lat"] and vw["lonStart"] == fw["lon"] for vw in vid_waypoints)
+                end_vid = any(vw["mode"] == "moving" and vw["latEnd"] == fw["lat"] and vw["lonEnd"] == fw["lon"] for vw in vid_waypoints)
+                static_vid = any(vw["mode"] == "static" and vw["lat"] == fw["lat"] and vw["lon"] == fw["lon"] for vw in vid_waypoints)
+                cleaned_waypoints.append(
+                    {"lat": fw["lat"], "lon": fw["lon"], "takePic": take_pic, "startVid": start_vid, "endVid": end_vid,"staticVid": static_vid})
 
             self.drawFlighPlan(cleaned_waypoints)
             if pic_interval > 0:
@@ -959,8 +973,9 @@ class FlightPlanDesignerWindow:
                 })
 
                 # current lat, lon are the origin coordinates
-                self.lat = self.originlat
-                self.lon = self.originlon
+                # self.lat = self.originlat
+                # self.lon = self.originlon
+                self.lat, self.lon = self.converter.convertToPosition((e.x, e.y))
 
                 # insert information of origin waypoint in the table
                 self.wpWindow.insertHome(self.lat, self.lon)
